@@ -1,0 +1,221 @@
+import axios from "axios";
+import CryptoJS from "crypto-js";
+
+export default class ApiService {
+  static BASE_URL = "http://localhost:8080/api";
+  static ENCRYPTION_KEY = "dennis-secrete-key";
+
+  // ---------------------------
+  // 🔹 Encryption / Decryption
+  // ---------------------------
+  static encrypt(token) {
+    return CryptoJS.AES.encrypt(token, this.ENCRYPTION_KEY).toString();
+  }
+
+  static decrypt(token) {
+    const bytes = CryptoJS.AES.decrypt(token, this.ENCRYPTION_KEY);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  static saveToken(token) {
+    const encryptedToken = this.encrypt(token);
+    localStorage.setItem("token", encryptedToken);
+  }
+
+  static getToken() {
+    const encryptedToken = localStorage.getItem("token");
+    if (!encryptedToken) return null;
+    return this.decrypt(encryptedToken);
+  }
+
+  static saveRole(role) {
+    const encryptedRole = this.encrypt(role);
+    localStorage.setItem("role", encryptedRole);
+  }
+
+  static getRole() {
+    const encryptedRole = localStorage.getItem("role");
+    if (!encryptedRole) return null;
+    return this.decrypt(encryptedRole);
+  }
+
+  static clearAuth() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+  }
+
+  static getHeader() {
+    const token = this.getToken();
+    return {
+      Authorization: token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json",
+    };
+  }
+
+  // ---------------------------
+  // 🔹 Auth
+  // ---------------------------
+  static async registerUser(data) {
+    return axios.post(`${this.BASE_URL}/auth/register`, data);
+  }
+
+  static async loginUser(data) {
+    const resp = await axios.post(`${this.BASE_URL}/auth/login`, data);
+    return resp.data;
+  }
+
+  static logout() {
+    this.clearAuth();
+  }
+
+  // ---------------------------
+  // 🔹 Users
+  // ---------------------------
+  static async myProfile() {
+    const resp = await axios.get(`${this.BASE_URL}/users/account`, {
+      headers: this.getHeader(),
+    });
+    return resp.data;
+  }
+
+  static async myBookings() {
+    const resp = await axios.get(`${this.BASE_URL}/users/bookings`, {
+      headers: this.getHeader(),
+    });
+    return resp.data;
+  }
+
+  // ---------------------------
+  // 🔹 Rooms
+  // ---------------------------
+  static async getAllRooms() {
+    const resp = await axios.get(`${this.BASE_URL}/rooms/all`);
+    return resp.data;
+  }
+
+  static async getRoomById(roomId) {
+    const resp = await axios.get(`${this.BASE_URL}/rooms/${roomId}`);
+    return resp.data;
+  }
+
+  static async addRoom(formData) {
+    const resp = await axios.post(`${this.BASE_URL}/rooms/add`, formData, {
+      headers: {
+        ...this.getHeader(),
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return resp.data;
+  }
+
+  // ✅ ✅ ✅ ONLY NEW METHOD ADDED (NOTHING ELSE TOUCHED)
+  static async updateRoom(formData) {
+    const resp = await axios.put(`${this.BASE_URL}/rooms/update`, formData, {
+      headers: {
+        ...this.getHeader(),
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return resp.data;
+  }
+
+  static async deleteRoom(roomId) {
+    const resp = await axios.delete(
+      `${this.BASE_URL}/rooms/delete/${roomId}`,
+      {
+        headers: this.getHeader(),
+      }
+    );
+    return resp.data;
+  }
+
+  static async getRoomTypes() {
+    const resp = await axios.get(`${this.BASE_URL}/rooms/types`);
+    return resp.data;
+  }
+
+  static async getAvailableRooms(params) {
+    const resp = await axios.get(`${this.BASE_URL}/rooms/available`, { params });
+    return resp.data;
+  }
+
+  // ---------------------------
+  // 🔹 Bookings
+  // ---------------------------
+  static async createBooking(booking) {
+    const resp = await axios.post(
+      `${this.BASE_URL}/bookings/create`,
+      booking,
+      { headers: this.getHeader() }
+    );
+    return resp.data;
+  }
+
+  static async getBookingByReference(reference) {
+    const resp = await axios.get(`${this.BASE_URL}/bookings/${reference}`, {
+      headers: this.getHeader(),
+    });
+    return resp.data;
+  }
+
+  static async getAllBookings() {
+    const resp = await axios.get(`${this.BASE_URL}/bookings/all`, {
+      headers: this.getHeader(),
+    });
+    return resp.data;
+  }
+// ---------------------------
+// 🔹 Bookings
+// ---------------------------
+static async updateBooking(data) {
+  const resp = await axios.put(
+    `${this.BASE_URL}/bookings/update`,
+    data,
+    { headers: this.getHeader() }
+  );
+  return resp.data;
+}
+
+
+  // ---------------------------
+  // 🔹 Payment
+  // ---------------------------
+  static async proceedForPayment({ bookingReference, amount }) {
+    const resp = await axios.post(
+      `${this.BASE_URL}/payments/proceed`,
+      { bookingReference, amount },
+      { headers: this.getHeader() }
+    );
+    return resp.data;
+  }
+
+  static async updateBookingPayment({
+    bookingReference,
+    amount,
+    transactionId,
+    success,
+    failureReason,
+  }) {
+    const resp = await axios.put(
+      `${this.BASE_URL}/payments`,
+      { bookingReference, amount, transactionId, success, failureReason },
+      { headers: this.getHeader() }
+    );
+    return resp.data;
+  }
+
+  // ---------------------------
+  // 🔹 Roles
+  // ---------------------------
+  static isAdmin() {
+    return this.getRole() === "ADMIN";
+  }
+
+  static isCustomer() {
+    return this.getRole() === "CUSTOMER";
+  }
+
+  static isAuthenticated() {
+    return !!this.getToken();
+  }
+}

@@ -1,0 +1,16 @@
+# Java / Spring
+target/
+*.class
+*.jar
+*.log
+
+# Node / React
+node_modules/
+build/
+
+# IDE
+.idea/
+*.iml
+
+# Secrets
+src/main/resources/application.properties
