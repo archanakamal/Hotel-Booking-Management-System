@@ -5,7 +5,8 @@ import { DayPicker } from "react-day-picker";
 const RoomSearch = ({ handSearchResult }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [roomType, setRoomType] = useState(null); // null = All Rooms
+  const [roomType, setRoomType] = useState(null);
+
   const [roomTypes, setRoomTypes] = useState([]);
   const [error, setError] = useState("");
 
@@ -15,19 +16,26 @@ const RoomSearch = ({ handSearchResult }) => {
   const startDateRef = useRef(null);
   const endDateRef = useRef(null);
 
+  // ✅ FIXED API CALL (MAIN ISSUE SOLVED HERE)
   useEffect(() => {
     const fetchRoomTypes = async () => {
       try {
         const resp = await ApiService.getRoomTypes();
-        setRoomTypes(Array.isArray(resp.roomTypes) ? resp.roomTypes : []);
+
+        // 🔥 handles all backend formats safely
+        const data = resp?.data || resp?.roomTypes || resp;
+
+        setRoomTypes(Array.isArray(data) ? data : []);
       } catch (error) {
         console.log("Error fetching RoomTypes", error);
         setRoomTypes([]);
       }
     };
+
     fetchRoomTypes();
   }, []);
 
+  // Close date pickers when clicking outside
   const handleClickOutside = (event) => {
     if (startDateRef.current && !startDateRef.current.contains(event.target)) {
       setStartDatePickerVisible(false);
@@ -39,9 +47,7 @@ const RoomSearch = ({ handSearchResult }) => {
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const showError = (message, timeout = 5000) => {
@@ -83,6 +89,7 @@ const RoomSearch = ({ handSearchResult }) => {
   return (
     <section>
       <div className="search-container">
+
         {/* Check-in */}
         <div className="search-field" style={{ position: "relative" }}>
           <label>Check-in Date</label>
@@ -131,7 +138,7 @@ const RoomSearch = ({ handSearchResult }) => {
           )}
         </div>
 
-        {/* Room type */}
+        {/* Room type dropdown (FIXED) */}
         <div className="search-field">
           <label>Room Type</label>
           <select
@@ -139,12 +146,16 @@ const RoomSearch = ({ handSearchResult }) => {
             onChange={(e) => setRoomType(e.target.value || null)}
           >
             <option value="">All Rooms</option>
-            {Array.isArray(roomTypes) &&
+
+            {Array.isArray(roomTypes) && roomTypes.length > 0 ? (
               roomTypes.map((type) => (
-                <option value={type} key={type}>
+                <option value={type} key={String(type)}>
                   {type}
                 </option>
-              ))}
+              ))
+            ) : (
+              <option disabled>Loading room types...</option>
+            )}
           </select>
         </div>
 
