@@ -56,13 +56,13 @@ export default class ApiService {
   // 🔹 Auth
   // ---------------------------
   static async registerUser(data) {
-    return axios.post(`${this.BASE_URL}/auth/register`, data);
+    return axios.post(`${this.BASE_URL}/api/auth/register`, data);
   }
 
-  static async loginUser(data) {
-    const resp = await axios.post(`${this.BASE_URL}/auth/login`, data);
-    return resp.data;
-  }
+ static async loginUser(data) {
+   const resp = await axios.post(`${this.BASE_URL}/api/auth/login`, data);
+   return resp.data;
+ }
 
   static logout() {
     this.clearAuth();
