@@ -24,7 +24,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityFilter {
 
-
     private final AuthFilter authFilter;
 
     private final CustomAccessDenialHandler customAccessDenialHandler;
@@ -34,18 +33,28 @@ public class SecurityFilter {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
-        httpSecurity.csrf(AbstractHttpConfigurer::disable)
+        httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(exception ->
-                        exception.accessDeniedHandler(customAccessDenialHandler)
+                        exception
+                                .accessDeniedHandler(customAccessDenialHandler)
                                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/auth/**", "/api/rooms/**", "api/bookings/**").permitAll()
+                        // PUBLIC ENDPOINTS (NO LOGIN REQUIRED)
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll()
+                        .requestMatchers("/api/bookings/**").permitAll()
+
+                        // EVERYTHING ELSE NEEDS AUTH
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(manager ->
+                        manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+
         return httpSecurity.build();
     }
 
@@ -57,9 +66,6 @@ public class SecurityFilter {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
             throws Exception {
-
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-
 }
