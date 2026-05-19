@@ -29,7 +29,7 @@ public class AuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-
+        System.out.println("FILTER HIT: " + request.getRequestURI());
         String path = request.getRequestURI();
 
         // ✅ SKIP AUTH ENDPOINTS (REGISTER / LOGIN)
