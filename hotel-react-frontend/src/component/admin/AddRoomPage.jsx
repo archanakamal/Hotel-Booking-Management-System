@@ -18,26 +18,27 @@ const AddRoomPage = () => {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [roomTypes, setRoomTypes] = useState([]); // Default empty array
+  const [roomTypes, setRoomTypes] = useState([]);
 
   useEffect(() => {
-    const fetchRoomTypes = async () => {
-      try {
-        const resp = await ApiService.getRoomTypes();
-
-        // Ensure we always have an array
-        const typesArray = Array.isArray(resp.roomTypes)
-          ? resp.roomTypes
-          : [];
-        setRoomTypes(typesArray);
-      } catch (err) {
-        console.log(err.response?.data?.message || err.message);
-        setRoomTypes([]); // fallback
-      }
-    };
-
     fetchRoomTypes();
   }, []);
+
+  const fetchRoomTypes = async () => {
+    try {
+      const resp = await ApiService.getRoomTypes();
+
+      console.log("Room Types Response:", resp);
+
+      // supports both direct array and axios response.data
+      const types = Array.isArray(resp) ? resp : resp.data;
+
+      setRoomTypes(types || []);
+    } catch (err) {
+      console.error("Error loading room types:", err);
+      setRoomTypes([]);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,11 +49,15 @@ const AddRoomPage = () => {
   };
 
   const handleRoomTypeChange = (e) => {
-    setRoomDetails((prev) => ({ ...prev, type: e.target.value }));
+    setRoomDetails((prev) => ({
+      ...prev,
+      type: e.target.value,
+    }));
   };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
+
     if (selectedFile) {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
@@ -65,38 +70,39 @@ const AddRoomPage = () => {
   const addRoom = async () => {
     if (
       !roomDetails.type ||
+      !roomDetails.roomNumber ||
       !roomDetails.pricePerNight ||
-      !roomDetails.capacity ||
-      !roomDetails.roomNumber
+      !roomDetails.capacity
     ) {
-      setError("All room details must be provided.");
+      setError("Please fill all required fields.");
       setTimeout(() => setError(""), 5000);
       return;
     }
 
-    if (!window.confirm("Do you want to add this room?")) return;
-
     try {
       const formData = new FormData();
+
       formData.append("type", roomDetails.type);
+      formData.append("roomNumber", roomDetails.roomNumber);
       formData.append("pricePerNight", roomDetails.pricePerNight);
       formData.append("capacity", roomDetails.capacity);
-      formData.append("roomNumber", roomDetails.roomNumber);
       formData.append("description", roomDetails.description);
 
-      if (file) formData.append("imageFile", file);
+      if (file) {
+        formData.append("imageFile", file);
+      }
 
       const result = await ApiService.addRoom(formData);
 
-      if (result.status === 200) {
-        setSuccess("Room added successfully.");
+      if (result.status === 200 || result.status === 201) {
+        setSuccess("Room added successfully");
+
         setTimeout(() => {
-          setSuccess("");
           navigate("/admin/manage-rooms");
-        }, 3000);
+        }, 2000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      setError(err.response?.data?.message || "Failed to add room");
       setTimeout(() => setError(""), 5000);
     }
   };
@@ -104,31 +110,35 @@ const AddRoomPage = () => {
   return (
     <div className="edit-room-container">
       <h2>Add New Room</h2>
+
       {error && <p className="error-message">{error}</p>}
       {success && <p className="success-message">{success}</p>}
 
       <div className="edit-room-form">
+
         <div className="form-group">
           {preview && (
             <img
               src={preview}
-              alt="Room Preview"
+              alt="Preview"
               className="room-photo-preview"
             />
           )}
-          <input type="file" name="roomPhoto" onChange={handleFileChange} />
+
+          <input type="file" onChange={handleFileChange} />
         </div>
 
         <div className="form-group">
           <label>Room Type</label>
+
           <select value={roomDetails.type} onChange={handleRoomTypeChange}>
             <option value="">Select a room type</option>
-            {Array.isArray(roomTypes) &&
-              roomTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
+
+            {roomTypes.map((type, index) => (
+              <option key={index} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -163,17 +173,18 @@ const AddRoomPage = () => {
         </div>
 
         <div className="form-group">
-          <label>Room Description</label>
+          <label>Description</label>
           <textarea
             name="description"
             value={roomDetails.description}
             onChange={handleChange}
-          ></textarea>
+          />
         </div>
 
         <button className="update-button" onClick={addRoom}>
           Add Room
         </button>
+
       </div>
     </div>
   );

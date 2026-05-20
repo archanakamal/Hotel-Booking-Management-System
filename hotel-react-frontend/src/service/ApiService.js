@@ -99,13 +99,7 @@ export default class ApiService {
   }
 
   static async addRoom(formData) {
-    const resp = await axios.post(`${this.BASE_URL}/rooms/add`, formData, {
-      headers: {
-        ...this.getHeader(),
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return resp.data;
+      return axios.post(`${BASE_URL}/rooms/add`, formData);
   }
 
   // ✅ ✅ ✅ ONLY NEW METHOD ADDED (NOTHING ELSE TOUCHED)
@@ -130,8 +124,7 @@ export default class ApiService {
   }
 
   static async getRoomTypes() {
-    const resp = await axios.get(`${this.BASE_URL}/rooms/types`);
-    return resp.data;
+      return axios.get(`${BASE_URL}/room-types`);
   }
 
   static async getAvailableRooms(params) {
