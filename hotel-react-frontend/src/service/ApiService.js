@@ -118,10 +118,10 @@ export default class ApiService {
     return resp.data;
   }
 
-  static async getRoomTypes() {
-    const resp = await axios.get(`${BASE_URL}/room-types`);
-    return resp.data;
-  }
+ static async getRoomTypes() {
+   const resp = await axios.get(`${BASE_URL}/api/rooms/types`);
+   return resp.data;
+ }
 
   static async getAvailableRooms(params) {
     const resp = await axios.get(`${BASE_URL}/rooms/available`, { params });
