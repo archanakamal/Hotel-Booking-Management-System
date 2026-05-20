@@ -25,25 +25,22 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Async
     public void sendEmail(NotificationDTO notificationDTO) {
-        log.info("Sending email ...");
 
-        SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
-        simpleMailMessage.setTo(notificationDTO.getRecipient());
-        simpleMailMessage.setSubject(notificationDTO.getSubject());
-        simpleMailMessage.setText(notificationDTO.getBody());
+        try {
+            log.info("EMAIL START → {}", notificationDTO.getRecipient());
 
-        javaMailSender.send(simpleMailMessage);
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(notificationDTO.getRecipient());
+            message.setSubject(notificationDTO.getSubject());
+            message.setText(notificationDTO.getBody());
 
-        //SAVE TO DATABSE
-        Notification notificationToSave = Notification.builder()
-                .recipient(notificationDTO.getRecipient())
-                .subject(notificationDTO.getSubject())
-                .body(notificationDTO.getBody())
-                .bookingReference(notificationDTO.getBookingReference())
-                .type(NotificationType.EMAIL)
-                .build();
+            javaMailSender.send(message);
 
-        notificationRepository.save(notificationToSave);
+            log.info("EMAIL SENT SUCCESSFULLY ✔");
+
+        } catch (Exception e) {
+            log.error("❌ EMAIL FAILED FULL STACKTRACE", e);
+        }
     }
 
     @Override
