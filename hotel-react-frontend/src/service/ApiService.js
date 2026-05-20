@@ -3,6 +3,16 @@ import CryptoJS from "crypto-js";
 
 const BASE_URL = "https://hotel-booking-management-system-rbo6.onrender.com";
 
+/**
+ * FIX: axios instance added (THIS WAS MISSING)
+ */
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 export default class ApiService {
   static ENCRYPTION_KEY = "dennis-secrete-key";
 
@@ -136,30 +146,28 @@ export default class ApiService {
     return resp.data;
   }
 
-    /**
-     * =========================
-     * BOOKINGS
-     * =========================
-     */
-    static async createBooking(booking) {
-      const res = await api.post("/bookings/create", booking);
-      return res.data;
-    }
+  // ---------------------------
+  // BOOKINGS
+  // ---------------------------
+  static async createBooking(booking) {
+    const res = await api.post("/bookings/create", booking);
+    return res.data;
+  }
 
-    static async getBookingByReference(reference) {
-      const res = await api.get(`/bookings/${reference}`);
-      return res.data;
-    }
+  static async getBookingByReference(reference) {
+    const res = await api.get(`/bookings/${reference}`);
+    return res.data;
+  }
 
-    static async getAllBookings() {
-      const res = await api.get("/bookings/all");
-      return res.data;
-    }
+  static async getAllBookings() {
+    const res = await api.get("/bookings/all");
+    return res.data;
+  }
 
-    static async updateBooking(data) {
-      const res = await api.put("/bookings/update", data);
-      return res.data;
-    }
+  static async updateBooking(data) {
+    const res = await api.put("/bookings/update", data);
+    return res.data;
+  }
 
   // ---------------------------
   // Payment
