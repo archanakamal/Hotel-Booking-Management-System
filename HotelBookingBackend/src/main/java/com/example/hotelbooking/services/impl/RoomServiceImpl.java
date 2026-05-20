@@ -1,5 +1,6 @@
 package com.example.hotelbooking.services.impl;
 
+
 import com.example.hotelbooking.dtos.Response;
 import com.example.hotelbooking.dtos.RoomDTO;
 import com.example.hotelbooking.entities.Room;
@@ -16,12 +17,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+
 import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -30,6 +36,7 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final ModelMapper modelMapper;
+    private final Cloudinary cloudinary;
 
     private static final String IMAGE_DIRECTORY_FRONTEND =
             System.getProperty("user.dir") + "/uploads/rooms/";
@@ -40,7 +47,7 @@ public class RoomServiceImpl implements RoomService {
         Room roomToSave = modelMapper.map(roomDTO, Room.class);
 
         if (imageFile != null && !imageFile.isEmpty()) {
-            String imagePath = saveImageToFrontend(imageFile);
+            String imagePath = saveImageToCloudinary(imageFile);
             roomToSave.setImageUrl(imagePath);
         }
 
@@ -59,7 +66,7 @@ public class RoomServiceImpl implements RoomService {
                 .orElseThrow(() -> new NotFoundException("Room not found"));
 
         if (imageFile != null && !imageFile.isEmpty()) {
-            String imagePath = saveImageToFrontend(imageFile);
+            String imagePath = saveImageToCloudinary(imageFile);
             existingRoom.setImageUrl(imagePath);
         }
 
@@ -178,28 +185,18 @@ public class RoomServiceImpl implements RoomService {
                 .build();
     }
 
-    private String saveImageToFrontend(MultipartFile imageFile) {
-
-        if (!imageFile.getContentType().startsWith("image/")) {
-            throw new IllegalArgumentException("Only Image files are allowed");
-        }
-
-        File directory = new File(IMAGE_DIRECTORY_FRONTEND);
-
-        if (!directory.exists()) {
-            directory.mkdirs();   // fixed
-        }
-
-        String uniqueFileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        String imagePath = IMAGE_DIRECTORY_FRONTEND + uniqueFileName;
+    private String saveImageToCloudinary(MultipartFile imageFile) {
 
         try {
-            File destinationFile = new File(imagePath);
-            imageFile.transferTo(destinationFile);
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(ex.getMessage());
-        }
+            Map uploadResult = cloudinary.uploader().upload(
+                    imageFile.getBytes(),
+                    ObjectUtils.emptyMap()
+            );
 
-        return "/uploads/rooms/" + uniqueFileName;
+            return uploadResult.get("secure_url").toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Image upload failed");
+        }
     }
 }

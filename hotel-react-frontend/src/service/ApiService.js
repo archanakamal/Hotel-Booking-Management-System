@@ -92,10 +92,10 @@ export default class ApiService {
     return resp.data;
   }
 
-  static async getRoomById(roomId) {
-    const resp = await axios.get(`${BASE_URL}/rooms/${roomId}`);
-    return resp.data;
-  }
+ static async getRoomById(roomId) {
+   const resp = await axios.get(`${BASE_URL}/api/rooms/${roomId}`);
+   return resp.data;
+ }
 
   static async addRoom(formData) {
     const resp = await axios.post(`${BASE_URL}/api/rooms/add`, formData, {
