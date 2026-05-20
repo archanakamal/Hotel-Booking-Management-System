@@ -147,21 +147,19 @@ export default class ApiService {
   // ---------------------------
   // BOOKINGS
   // ---------------------------
-  static async createBooking(booking) {
-    const token = this.getToken();
-
-    const res = await axios.post(
-      `${BASE_URL}/api/bookings/create`,
-      booking,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+    static async createBooking(booking) {
+      const res = await axios.post(
+        `${BASE_URL}/api/bookings`,
+        booking,
+        {
+          headers: {
+            Authorization: `Bearer ${this.getToken()}`
+          }
         }
-      }
-    );
+      );
 
-    return res.data;
-  }
+      return res.data;
+    }
 
   static async getBookingByReference(reference) {
     const res = await api.get(`/bookings/${reference}`);
