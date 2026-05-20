@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -34,7 +35,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
-
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
     private final NotificationService notificationService;
@@ -42,13 +42,15 @@ public class BookingServiceImpl implements BookingService {
     private final UserService userService;
     private final BookingCodeGenerator bookingCodeGenerator;
 
-
     @Override
     public Response getAllBookings() {
-        List<Booking> bookingList =bookingRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
-        List<BookingDTO> bookingDTOList = modelMapper.map(bookingList, new TypeToken<List<BookingDTO>>() {}.getType());
+        List<Booking> bookingList =
+                bookingRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
 
-        for(BookingDTO bookingDTO: bookingDTOList){
+        List<BookingDTO> bookingDTOList =
+                modelMapper.map(bookingList, new TypeToken<List<BookingDTO>>() {}.getType());
+
+        for (BookingDTO bookingDTO : bookingDTOList) {
             bookingDTO.setUser(null);
             bookingDTO.setRoom(null);
         }
@@ -68,21 +70,25 @@ public class BookingServiceImpl implements BookingService {
         Room room = roomRepository.findById(bookingDTO.getRoomId())
                 .orElseThrow(() -> new NotFoundException("Room Not Found"));
 
-        // ✅ Validation: check-in not before today
-        if (bookingDTO.getCheckInDate().isBefore(LocalDate.now())) {
+        // ==============================
+        // FIX 1: TIMEZONE SAFE VALIDATION
+        // ==============================
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+
+        if (bookingDTO.getCheckInDate().isBefore(today)) {
             throw new InvalidBookingStateAndDateException(
                     "Check-in date cannot be before today"
             );
         }
 
-        // ✅ FIXED: check-out must be after check-in
+        // ==============================
+        // CHECK-OUT VALIDATION
+        // ==============================
         if (bookingDTO.getCheckOutDate().isBefore(bookingDTO.getCheckInDate())) {
             throw new InvalidBookingStateAndDateException(
                     "Check-out date cannot be before check-in date"
             );
         }
-
-        // ❌ removed invalid same-field comparison bug
 
         // validate availability
         boolean isAvailable = bookingRepository.isRoomAvailable(
@@ -115,7 +121,7 @@ public class BookingServiceImpl implements BookingService {
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        // payment link (KEEP backend URL later for production)
+        // payment link
         String paymentUrl =
                 "https://your-frontend.vercel.app/payment/"
                         + bookingReference + "/" + totalPrice;
@@ -143,10 +149,13 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Response findBookingByReferenceNo(String bookingReference) {
         Booking booking = bookingRepository.findByBookingReference(bookingReference)
-                .orElseThrow(()-> new NotFoundException("Booking with reference No: " + bookingReference + "Not found"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Booking with reference No: " + bookingReference + " Not found"
+                ));
 
         BookingDTO bookingDTO = modelMapper.map(booking, BookingDTO.class);
-        return  Response.builder()
+
+        return Response.builder()
                 .status(200)
                 .message("success")
                 .booking(bookingDTO)
@@ -155,10 +164,11 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Response updateBooking(BookingDTO bookingDTO) {
-        if (bookingDTO.getId() == null) throw new NotFoundException("Booking id is required");
+        if (bookingDTO.getId() == null)
+            throw new NotFoundException("Booking id is required");
 
         Booking existingBooking = bookingRepository.findById(bookingDTO.getId())
-                .orElseThrow(()-> new NotFoundException("Booking Not Found"));
+                .orElseThrow(() -> new NotFoundException("Booking Not Found"));
 
         if (bookingDTO.getBookingStatus() != null) {
             existingBooking.setBookingStatus(bookingDTO.getBookingStatus());
@@ -176,15 +186,17 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-
-    private BigDecimal calculateTotalPrice(Room room, BookingDTO bookingDTO){
+    private BigDecimal calculateTotalPrice(Room room, BookingDTO bookingDTO) {
         BigDecimal pricePerNight = room.getPricePerNight();
-        long days = ChronoUnit.DAYS.between(bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
+
+        long days = Math.max(
+                ChronoUnit.DAYS.between(
+                        bookingDTO.getCheckInDate(),
+                        bookingDTO.getCheckOutDate()
+                ),
+                1
+        );
+
         return pricePerNight.multiply(BigDecimal.valueOf(days));
     }
-
-
-
-
-
 }
