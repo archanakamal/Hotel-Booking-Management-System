@@ -2,7 +2,7 @@ import axios from "axios";
 import CryptoJS from "crypto-js";
 
 export default class ApiService {
-  static BASE_URL = "https://hotel-booking-management-system-rbo6.onrender.com";
+  const BASE_URL = "https://hotel-booking-management-system-rbo6.onrender.com/";
   static ENCRYPTION_KEY = "dennis-secrete-key";
 
   // ---------------------------
