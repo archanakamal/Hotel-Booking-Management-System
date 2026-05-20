@@ -19,53 +19,74 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityFilter {
 
     private final AuthFilter authFilter;
-
     private final CustomAccessDenialHandler customAccessDenialHandler;
-
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        httpSecurity
+        http
+                // ❌ disable CSRF for REST APIs
                 .csrf(AbstractHttpConfigurer::disable)
+
+                // ✅ enable CORS (you already have CorsFilter bean)
                 .cors(Customizer.withDefaults())
+
+                // ❌ custom exception handling
                 .exceptionHandling(exception ->
                         exception
                                 .accessDeniedHandler(customAccessDenialHandler)
                                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
+
+                // ✅ SECURITY RULES (FIXED)
                 .authorizeHttpRequests(request -> request
-                        // PUBLIC ENDPOINTS (NO LOGIN REQUIRED)
+
+                        // PUBLIC ENDPOINTS
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll()
-                        .requestMatchers("/api/bookings/**").permitAll()
 
-                        // EVERYTHING ELSE NEEDS AUTH
+                        // PROTECTED ENDPOINTS (FIXED)
+                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/bookings/**").authenticated()
+                        .requestMatchers("/payments/**").authenticated()
+
+                        // EVERYTHING ELSE
                         .anyRequest().authenticated()
                 )
+
+                // ❌ no sessions (JWT system)
                 .sessionManagement(manager ->
                         manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
+                // ✅ JWT FILTER
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return httpSecurity.build();
+        return http.build();
     }
 
+    // ---------------------------
+    // PASSWORD ENCODER
+    // ---------------------------
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ---------------------------
+    // AUTH MANAGER
+    // ---------------------------
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration
+    ) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 }

@@ -80,19 +80,17 @@ export default class ApiService {
   // ---------------------------
   // Users
   // ---------------------------
-  static async myProfile() {
-    const resp = await axios.get(`${BASE_URL}/users/account`, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    static async myProfile() {
+      return axios.get(`${BASE_URL}/api/users/account`, {
+        headers: this.getHeader(),
+      });
+    }
 
-  static async myBookings() {
-    const resp = await axios.get(`${BASE_URL}/users/bookings`, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    static async myBookings() {
+      return axios.get(`${BASE_URL}/api/users/bookings`, {
+        headers: this.getHeader(),
+      });
+    }
 
   // ---------------------------
   // Rooms

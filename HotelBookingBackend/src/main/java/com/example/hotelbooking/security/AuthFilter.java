@@ -29,11 +29,25 @@ public class AuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println("FILTER HIT: " + request.getRequestURI());
+
         String path = request.getRequestURI();
 
-        // ✅ SKIP AUTH ENDPOINTS (REGISTER / LOGIN)
-        if (path.startsWith("/api/auth/")) {
+        System.out.println("FILTER HIT: " + path);
+
+        // ---------------------------
+        // 1. SKIP OPTIONS (CORS PRE-FLIGHT)
+        // ---------------------------
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ---------------------------
+        // 2. SKIP PUBLIC ENDPOINTS
+        // ---------------------------
+        if (path.startsWith("/api/auth/")
+                || path.startsWith("/api/rooms/")
+                || path.startsWith("/error")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -41,35 +55,40 @@ public class AuthFilter extends OncePerRequestFilter {
         try {
             String token = getTokenFromRequest(request);
 
-            if (StringUtils.hasText(token)) {
+            if (!StringUtils.hasText(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-                String email = jwtUtils.getUsernameFromToken(token);
+            String email = jwtUtils.getUsernameFromToken(token);
 
-                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                    UserDetails userDetails =
-                            customUserDetailsService.loadUserByUsername(email);
+                UserDetails userDetails =
+                        customUserDetailsService.loadUserByUsername(email);
 
-                    if (jwtUtils.isTokenValid(token, userDetails)) {
+                if (jwtUtils.isTokenValid(token, userDetails)) {
 
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(
-                                        userDetails,
-                                        null,
-                                        userDetails.getAuthorities()
-                                );
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                        authentication.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request)
-                        );
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
 
         } catch (Exception e) {
             log.error("JWT Filter Error: {}", e.getMessage());
+
+            // IMPORTANT: clear context to avoid random auth issues
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
@@ -78,7 +97,7 @@ public class AuthFilter extends OncePerRequestFilter {
     private String getTokenFromRequest(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             return header.substring(7);
         }
 
