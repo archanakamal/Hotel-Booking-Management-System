@@ -92,10 +92,10 @@ export default class ApiService {
     return resp.data;
   }
 
- static async getRoomById(roomId) {
-   const resp = await axios.get(`${BASE_URL}/api/rooms/${roomId}`);
-   return resp.data;
- }
+  static async getRoomById(roomId) {
+    const resp = await axios.get(`${BASE_URL}/api/rooms/${roomId}`);
+    return resp.data;
+  }
 
   static async addRoom(formData) {
     const resp = await axios.post(`${BASE_URL}/api/rooms/add`, formData, {
@@ -108,9 +108,9 @@ export default class ApiService {
   }
 
   static async updateRoom(formData) {
-    const resp = await axios.put(`${BASE_URL}/rooms/update`, formData, {
+    const resp = await axios.put(`${BASE_URL}/api/rooms/update`, formData, {
       headers: {
-        ...this.getHeader(),
+        Authorization: `Bearer ${this.getToken()}`,
         "Content-Type": "multipart/form-data",
       },
     });
@@ -118,19 +118,21 @@ export default class ApiService {
   }
 
   static async deleteRoom(roomId) {
-    const resp = await axios.delete(`${BASE_URL}/rooms/delete/${roomId}`, {
+    const resp = await axios.delete(`${BASE_URL}/api/rooms/delete/${roomId}`, {
       headers: this.getHeader(),
     });
     return resp.data;
   }
 
- static async getRoomTypes() {
-   const resp = await axios.get(`${BASE_URL}/api/rooms/types`);
-   return resp.data;
- }
+  static async getRoomTypes() {
+    const resp = await axios.get(`${BASE_URL}/api/rooms/types`);
+    return resp.data;
+  }
 
   static async getAvailableRooms(params) {
-    const resp = await axios.get(`${BASE_URL}/rooms/available`, { params });
+    const resp = await axios.get(`${BASE_URL}/api/rooms/available`, {
+      params,
+    });
     return resp.data;
   }
 
