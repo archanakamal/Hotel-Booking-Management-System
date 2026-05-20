@@ -67,63 +67,50 @@ public class PaymentService {
     }
 
 
-    public void updatePaymentBooking(PaymentRequest paymentRequest){
+    public void updatePaymentBooking(PaymentRequest paymentRequest) {
 
-        log.info("Inside updatePaymentBooking()");
         String bookingReference = paymentRequest.getBookingReference();
 
         Booking booking = bookingRepository.findByBookingReference(bookingReference)
-                .orElseThrow(()-> new NotFoundException("Booing Not Found"));
+                .orElseThrow(() -> new NotFoundException("Booking Not Found"));
 
         PaymentEntity payment = new PaymentEntity();
         payment.setPaymentGateway(PaymentGateway.STRIPE);
         payment.setAmount(paymentRequest.getAmount());
         payment.setTransactionId(paymentRequest.getTransactionId());
-        payment.setPaymentStatus(paymentRequest.isSuccess() ? PaymentStatus.COMPLETED : PaymentStatus.FAILED);
+        payment.setPaymentStatus(paymentRequest.isSuccess()
+                ? PaymentStatus.COMPLETED
+                : PaymentStatus.FAILED);
         payment.setPaymentDate(LocalDateTime.now());
         payment.setBookingReference(bookingReference);
         payment.setUser(booking.getUser());
 
-        if (!paymentRequest.isSuccess()) {
-            payment.setFailureReason(paymentRequest.getFailureReason());
-        }
+        paymentRepository.save(payment);
 
-        paymentRepository.save(payment); //save payment to database
+        booking.setPaymentStatus(paymentRequest.isSuccess()
+                ? PaymentStatus.COMPLETED
+                : PaymentStatus.FAILED);
 
-        //create and send notifiaction
-        NotificationDTO notificationDTO = NotificationDTO.builder()
+        bookingRepository.save(booking);
+
+        NotificationDTO dto = NotificationDTO.builder()
                 .recipient(booking.getUser().getEmail())
-                .type(NotificationType.EMAIL)
                 .bookingReference(bookingReference)
                 .build();
 
-        log.info("About to send notification inside updatePaymentBooking  by sms");
+        if (paymentRequest.isSuccess()) {
 
+            dto.setSubject("🎉 Payment Successful");
+            dto.setBody("Your booking is confirmed! Ref: " + bookingReference);
 
-        if (paymentRequest.isSuccess()){
-            booking.setPaymentStatus(PaymentStatus.COMPLETED);
-            bookingRepository.save(booking); //Update the booking
+        } else {
 
-            notificationDTO.setSubject("Booking Payment Successful");
-            notificationDTO.setBody("Congratulation!! Your payment for booking with reference: " + bookingReference + "is successful");
-            notificationService.sendEmail(notificationDTO); //send email
-
-        }else {
-
-            booking.setPaymentStatus(PaymentStatus.FAILED);
-            bookingRepository.save(booking); //Update the booking
-
-            notificationDTO.setSubject("Booking Payment Failed");
-            notificationDTO.setBody("Your payment for booking with reference: " + bookingReference + "failed with reason: " + paymentRequest.getFailureReason());
-            notificationService.sendEmail(notificationDTO); //send email
+            dto.setSubject("❌ Payment Failed");
+            dto.setBody("Payment failed for booking: " + bookingReference);
         }
 
-
-
-
-
+        notificationService.sendEmail(dto);
     }
-
 
 
 

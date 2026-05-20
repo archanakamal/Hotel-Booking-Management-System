@@ -70,27 +70,16 @@ public class BookingServiceImpl implements BookingService {
         Room room = roomRepository.findById(bookingDTO.getRoomId())
                 .orElseThrow(() -> new NotFoundException("Room Not Found"));
 
-        // ==============================
-        // FIX 1: TIMEZONE SAFE VALIDATION
-        // ==============================
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
         if (bookingDTO.getCheckInDate().isBefore(today)) {
-            throw new InvalidBookingStateAndDateException(
-                    "Check-in date cannot be before today"
-            );
+            throw new InvalidBookingStateAndDateException("Check-in date cannot be before today");
         }
 
-        // ==============================
-        // CHECK-OUT VALIDATION
-        // ==============================
         if (bookingDTO.getCheckOutDate().isBefore(bookingDTO.getCheckInDate())) {
-            throw new InvalidBookingStateAndDateException(
-                    "Check-out date cannot be before check-in date"
-            );
+            throw new InvalidBookingStateAndDateException("Check-out date cannot be before check-in date");
         }
 
-        // validate availability
         boolean isAvailable = bookingRepository.isRoomAvailable(
                 room.getId(),
                 bookingDTO.getCheckInDate(),
@@ -98,16 +87,12 @@ public class BookingServiceImpl implements BookingService {
         );
 
         if (!isAvailable) {
-            throw new InvalidBookingStateAndDateException(
-                    "Room is not available for selected dates"
-            );
+            throw new InvalidBookingStateAndDateException("Room is not available for selected dates");
         }
 
-        // price calculation
         BigDecimal totalPrice = calculateTotalPrice(room, bookingDTO);
         String bookingReference = bookingCodeGenerator.generateBookingReference();
 
-        // create booking
         Booking booking = new Booking();
         booking.setUser(currentUser);
         booking.setRoom(room);
@@ -119,30 +104,28 @@ public class BookingServiceImpl implements BookingService {
         booking.setPaymentStatus(PaymentStatus.PENDING);
         booking.setCreatedAt(LocalDateTime.now());
 
-        Booking savedBooking = bookingRepository.save(booking);
+        bookingRepository.save(booking);
 
-        // payment link
+        // PAYMENT LINK
         String paymentUrl =
                 "https://your-frontend.vercel.app/payment/"
                         + bookingReference + "/" + totalPrice;
 
         log.info("PAYMENT LINK: {}", paymentUrl);
 
-        NotificationDTO notificationDTO = NotificationDTO.builder()
+        // 📩 EMAIL 1: Payment Link Email ONLY
+        NotificationDTO dto = NotificationDTO.builder()
                 .recipient(currentUser.getEmail())
-                .subject("Booking Confirmation")
-                .body("Your booking is successful. Pay here:\n" + paymentUrl)
+                .subject("Complete Your Booking Payment")
+                .body("Click here to pay:\n" + paymentUrl)
                 .bookingReference(bookingReference)
                 .build();
 
-        notificationService.sendEmail(notificationDTO);
-
-        BookingDTO responseDTO = modelMapper.map(savedBooking, BookingDTO.class);
+        notificationService.sendEmail(dto);
 
         return Response.builder()
                 .status(200)
                 .message("Booking created successfully")
-                .booking(responseDTO)
                 .build();
     }
 
