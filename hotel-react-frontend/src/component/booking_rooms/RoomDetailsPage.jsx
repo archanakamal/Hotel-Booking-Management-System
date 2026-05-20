@@ -10,6 +10,10 @@ const RoomDetailsPage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // ✅ NEW: date states
+  const [checkInDate, setCheckInDate] = useState("");
+  const [checkOutDate, setCheckOutDate] = useState("");
+
   // ---------------- FETCH ROOM ----------------
   useEffect(() => {
     const fetchRoom = async () => {
@@ -31,32 +35,27 @@ const RoomDetailsPage = () => {
       return;
     }
 
+    // ✅ VALIDATION
+    if (!checkInDate || !checkOutDate) {
+      alert("Please select check-in and check-out dates");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const bookingData = {
         roomId: room.id,
-        checkInDate: "2026-03-21",
-        checkOutDate: "2026-03-22",
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate,
       };
 
       const resp = await ApiService.createBooking(bookingData);
       console.log("Booking response:", resp);
 
-      /**
-       * Backend usually returns:
-       * {
-       *   status: 201,
-       *   message: "Booking created",
-       *   bookingReference: "J5Z3HDF6UD",
-       *   amount: 1000
-       * }
-       */
-
       if (resp.status === 200 || resp.status === 201) {
         alert("Booking successful!");
 
-        // 🔥 Redirect to payment page using reference & amount
         if (resp.bookingReference && resp.amount) {
           navigate(`/payment/${resp.bookingReference}/${resp.amount}`);
         }
@@ -94,6 +93,27 @@ const RoomDetailsPage = () => {
       <p><b>Capacity:</b> {room.capacity}</p>
       <p><b>Price:</b> ₹{room.pricePerNight}</p>
       <p><b>Description:</b> {room.description || "No description"}</p>
+
+      {/* ✅ DATE INPUTS */}
+      <div style={{ marginTop: "20px" }}>
+        <label>Check-in Date: </label>
+        <input
+          type="date"
+          value={checkInDate}
+          onChange={(e) => setCheckInDate(e.target.value)}
+        />
+
+        <br /><br />
+
+        <label>Check-out Date: </label>
+        <input
+          type="date"
+          value={checkOutDate}
+          onChange={(e) => setCheckOutDate(e.target.value)}
+        />
+      </div>
+
+      <br />
 
       <button onClick={handleBooking} disabled={loading}>
         {loading ? "Booking..." : "Book Now"}
