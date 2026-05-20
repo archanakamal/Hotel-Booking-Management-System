@@ -148,7 +148,18 @@ export default class ApiService {
   // BOOKINGS
   // ---------------------------
   static async createBooking(booking) {
-    const res = await api.post("/bookings/create", booking);
+    const token = this.getToken();
+
+    const res = await axios.post(
+      `${BASE_URL}/api/bookings/create`,
+      booking,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
     return res.data;
   }
 
