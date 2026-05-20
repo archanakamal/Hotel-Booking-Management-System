@@ -136,36 +136,30 @@ export default class ApiService {
     return resp.data;
   }
 
-  // ---------------------------
-  // Bookings
-  // ---------------------------
-  static async createBooking(booking) {
-    const resp = await axios.post(`${BASE_URL}/bookings/create`, booking, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    /**
+     * =========================
+     * BOOKINGS
+     * =========================
+     */
+    static async createBooking(booking) {
+      const res = await api.post("/bookings/create", booking);
+      return res.data;
+    }
 
-  static async getBookingByReference(reference) {
-    const resp = await axios.get(`${BASE_URL}/bookings/${reference}`, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    static async getBookingByReference(reference) {
+      const res = await api.get(`/bookings/${reference}`);
+      return res.data;
+    }
 
-  static async getAllBookings() {
-    const resp = await axios.get(`${BASE_URL}/bookings/all`, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    static async getAllBookings() {
+      const res = await api.get("/bookings/all");
+      return res.data;
+    }
 
-  static async updateBooking(data) {
-    const resp = await axios.put(`${BASE_URL}/bookings/update`, data, {
-      headers: this.getHeader(),
-    });
-    return resp.data;
-  }
+    static async updateBooking(data) {
+      const res = await api.put("/bookings/update", data);
+      return res.data;
+    }
 
   // ---------------------------
   // Payment

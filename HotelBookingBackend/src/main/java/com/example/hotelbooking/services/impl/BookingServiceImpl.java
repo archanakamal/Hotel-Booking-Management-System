@@ -66,35 +66,42 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = userService.getCurrentLoggedInUser();
 
         Room room = roomRepository.findById(bookingDTO.getRoomId())
-                .orElseThrow(()-> new NotFoundException("Room Not Found"));
+                .orElseThrow(() -> new NotFoundException("Room Not Found"));
 
-
-        //validation: Ensure the check-in date is not before today
-        if (bookingDTO.getCheckInDate().isBefore(LocalDate.now())){
-            throw new InvalidBookingStateAndDateException("check in date cannot be before today ");
+        // ✅ Validation: check-in not before today
+        if (bookingDTO.getCheckInDate().isBefore(LocalDate.now())) {
+            throw new InvalidBookingStateAndDateException(
+                    "Check-in date cannot be before today"
+            );
         }
 
-        //validation: Ensure the check-out date is not before check in date
-        if (bookingDTO.getCheckInDate().isBefore(bookingDTO.getCheckInDate())){
-            throw new InvalidBookingStateAndDateException("check out date cannot be before check in date ");
+        // ✅ FIXED: check-out must be after check-in
+        if (bookingDTO.getCheckOutDate().isBefore(bookingDTO.getCheckInDate())) {
+            throw new InvalidBookingStateAndDateException(
+                    "Check-out date cannot be before check-in date"
+            );
         }
 
-        //validation: Ensure the check-in date is not same as check out date
-        if (bookingDTO.getCheckInDate().isEqual(bookingDTO.getCheckOutDate())){
-            throw new InvalidBookingStateAndDateException("check in date cannot be equal to check out date ");
-        }
+        // ❌ removed invalid same-field comparison bug
 
-        //validate room availability
-       boolean isAvailable = bookingRepository.isRoomAvailable(room.getId(), bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
+        // validate availability
+        boolean isAvailable = bookingRepository.isRoomAvailable(
+                room.getId(),
+                bookingDTO.getCheckInDate(),
+                bookingDTO.getCheckOutDate()
+        );
+
         if (!isAvailable) {
-            throw new InvalidBookingStateAndDateException("Room is not available for the selected date ranges");
+            throw new InvalidBookingStateAndDateException(
+                    "Room is not available for selected dates"
+            );
         }
 
-        //calculate the total price needed to pay for the stay
+        // price calculation
         BigDecimal totalPrice = calculateTotalPrice(room, bookingDTO);
         String bookingReference = bookingCodeGenerator.generateBookingReference();
 
-        //create and save the booking
+        // create booking
         Booking booking = new Booking();
         booking.setUser(currentUser);
         booking.setRoom(room);
@@ -106,30 +113,31 @@ public class BookingServiceImpl implements BookingService {
         booking.setPaymentStatus(PaymentStatus.PENDING);
         booking.setCreatedAt(LocalDateTime.now());
 
-        bookingRepository.save(booking); //save to database
+        Booking savedBooking = bookingRepository.save(booking);
 
-        //generate the payment url which will be sent via mail
-         String paymentUrl = "http://localhost:3000/payment/" + bookingReference + "/" + totalPrice;
+        // payment link (KEEP backend URL later for production)
+        String paymentUrl =
+                "https://your-frontend.vercel.app/payment/"
+                        + bookingReference + "/" + totalPrice;
 
-         log.info("PAYMENT LINK: {}", paymentUrl);
+        log.info("PAYMENT LINK: {}", paymentUrl);
 
-         //send notification via email
         NotificationDTO notificationDTO = NotificationDTO.builder()
                 .recipient(currentUser.getEmail())
                 .subject("Booking Confirmation")
-                .body(String.format("Your booking has been created successfully. Please proceed with your payment using the payment link below " +
-                        "\n%s", paymentUrl))
+                .body("Your booking is successful. Pay here:\n" + paymentUrl)
                 .bookingReference(bookingReference)
                 .build();
 
-        notificationService.sendEmail(notificationDTO);// sending email
+        notificationService.sendEmail(notificationDTO);
+
+        BookingDTO responseDTO = modelMapper.map(savedBooking, BookingDTO.class);
 
         return Response.builder()
                 .status(200)
-                .message("Booking is successfully")
-                .booking(bookingDTO)
+                .message("Booking created successfully")
+                .booking(responseDTO)
                 .build();
-
     }
 
     @Override
