@@ -98,7 +98,13 @@ export default class ApiService {
   }
 
   static async addRoom(formData) {
-    return axios.post(`${BASE_URL}/rooms/add`, formData);
+    const resp = await axios.post(`${BASE_URL}/api/rooms/add`, formData, {
+      headers: {
+        Authorization: `Bearer ${this.getToken()}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return resp.data;
   }
 
   static async updateRoom(formData) {
