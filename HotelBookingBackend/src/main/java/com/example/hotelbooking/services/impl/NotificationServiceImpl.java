@@ -1,15 +1,10 @@
-package com.example.hotelbooking.services.impl;
-
 import com.example.hotelbooking.dtos.NotificationDTO;
-import com.example.hotelbooking.entities.Notification;
-import com.example.hotelbooking.enums.NotificationType;
 import com.example.hotelbooking.repositories.NotificationRepository;
 import com.example.hotelbooking.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,18 +12,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-
     private final JavaMailSender javaMailSender;
-
     private final NotificationRepository notificationRepository;
 
     @Override
     public void sendEmail(NotificationDTO notificationDTO) {
 
+        log.info("EMAIL START → {}", notificationDTO.getRecipient());
+
         try {
-            log.info("EMAIL START → {}", notificationDTO.getRecipient());
 
             SimpleMailMessage message = new SimpleMailMessage();
+
             message.setTo(notificationDTO.getRecipient());
             message.setSubject(notificationDTO.getSubject());
             message.setText(notificationDTO.getBody());
@@ -38,7 +33,19 @@ public class NotificationServiceImpl implements NotificationService {
             log.info("EMAIL SENT SUCCESSFULLY ✔");
 
         } catch (Exception e) {
-            log.error("❌ EMAIL FAILED FULL STACKTRACE", e);
+
+            log.error("EMAIL FAILED", e);
+
         }
+    }
+
+    @Override
+    public void sendSms() {
+
+    }
+
+    @Override
+    public void sendWhatsapp() {
+
     }
 }
