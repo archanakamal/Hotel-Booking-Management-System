@@ -23,7 +23,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
 
     @Override
-    @Async
     public void sendEmail(NotificationDTO notificationDTO) {
 
         try {
@@ -41,15 +40,5 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception e) {
             log.error("❌ EMAIL FAILED FULL STACKTRACE", e);
         }
-    }
-
-    @Override
-    public void sendSms() {
-
-    }
-
-    @Override
-    public void sendWhatsapp() {
-
     }
 }
