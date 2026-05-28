@@ -47,12 +47,14 @@ const RoomDetailsPage = () => {
         "service_xz5ok7a",
         "template_zwbg4hm",
         {
-          name: "Customer",
-          room: room.type,
-          checkin: checkInDate,
-          checkout: checkOutDate,
-          amount: room.pricePerNight,
-        },
+            name: ApiService.getUser().name,
+            email: ApiService.getUser().email,
+            room: room.type,
+            checkin: checkInDate,
+            checkout: checkOutDate,
+            amount: room.pricePerNight,
+        }
+
         "dCNQhYgucnWr7NzAG"
       );
 
