@@ -53,7 +53,7 @@ const RoomDetailsPage = () => {
             checkin: checkInDate,
             checkout: checkOutDate,
             amount: room.pricePerNight,
-        }
+        },
 
         "dCNQhYgucnWr7NzAG"
       );
