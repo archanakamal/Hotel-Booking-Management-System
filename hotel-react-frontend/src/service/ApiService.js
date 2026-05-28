@@ -42,16 +42,49 @@ export default class ApiService {
     localStorage.setItem("role", this.encrypt(role));
   }
 
+  static saveEmail(email) {
+    localStorage.setItem("email", this.encrypt(email));
+  }
+
+    static saveName(name) {
+      localStorage.setItem("name", this.encrypt(name));
+    }
+
+    static getLoggedInUserName() {
+
+      const encryptedName = localStorage.getItem("name");
+
+      if (!encryptedName) return null;
+
+      return this.decrypt(encryptedName);
+    }
+
+  static getLoggedInUserEmail() {
+
+    const encryptedEmail = localStorage.getItem("email");
+
+    if (!encryptedEmail) return null;
+
+    return this.decrypt(encryptedEmail);
+  }
+
+
   static getRole() {
     const encryptedRole = localStorage.getItem("role");
     if (!encryptedRole) return null;
     return this.decrypt(encryptedRole);
   }
 
-  static clearAuth() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-  }
+    static clearAuth() {
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("email");
+      localStorage.removeItem("name");
+
+    }
+
+
 
   static getHeader() {
     const token = this.getToken();
@@ -68,10 +101,36 @@ export default class ApiService {
     return axios.post(`${BASE_URL}/api/auth/register`, data);
   }
 
-  static async loginUser(data) {
-    const resp = await axios.post(`${BASE_URL}/api/auth/login`, data);
-    return resp.data;
+static async loginUser(data) {
+
+  const resp = await axios.post(
+    `${BASE_URL}/api/auth/login`,
+    data
+  );
+
+  // SAVE TOKEN
+  if (resp.data.token) {
+    this.saveToken(resp.data.token);
   }
+
+  // SAVE ROLE
+  if (resp.data.role) {
+    this.saveRole(resp.data.role);
+  }
+
+  // SAVE EMAIL
+  if (data.email) {
+    this.saveEmail(data.email);
+  }
+
+
+  if (data.name) {
+    this.saveName(data.name);
+  }
+
+  return resp.data;
+}
+
 
   static logout() {
     this.clearAuth();
