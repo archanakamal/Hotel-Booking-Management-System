@@ -28,10 +28,19 @@ public class NotificationServiceImpl implements NotificationService {
 
             SimpleMailMessage message = new SimpleMailMessage();
 
+            // sender email
+            message.setFrom("hotelgrand0709@gmail.com");
+
+            // receiver email
             message.setTo(notificationDTO.getRecipient());
+
+            // subject
             message.setSubject(notificationDTO.getSubject());
+
+            // body
             message.setText(notificationDTO.getBody());
 
+            // send email
             javaMailSender.send(message);
 
             log.info("EMAIL SENT SUCCESSFULLY ✔");
