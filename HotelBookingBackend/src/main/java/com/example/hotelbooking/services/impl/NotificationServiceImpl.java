@@ -1,8 +1,12 @@
+package com.example.hotelbooking.services.impl;
+
 import com.example.hotelbooking.dtos.NotificationDTO;
 import com.example.hotelbooking.repositories.NotificationRepository;
 import com.example.hotelbooking.services.NotificationService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -18,9 +22,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void sendEmail(NotificationDTO notificationDTO) {
 
-        log.info("EMAIL START → {}", notificationDTO.getRecipient());
-
         try {
+
+            log.info("EMAIL START → {}", notificationDTO.getRecipient());
 
             SimpleMailMessage message = new SimpleMailMessage();
 
