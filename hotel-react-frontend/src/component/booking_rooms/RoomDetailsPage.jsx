@@ -48,7 +48,7 @@ const RoomDetailsPage = () => {
         "template_zwbg4hm",
         {
             name: ApiService.getUser().name,
-            email: ApiService.getUser().email,
+            email: "thangaguhan7676@gmail.com",
             room: room.type,
             checkin: checkInDate,
             checkout: checkOutDate,
