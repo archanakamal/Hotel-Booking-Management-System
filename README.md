@@ -154,7 +154,7 @@ GitHub:
 https://github.com/archanakamal
 
 LinkedIn:
-(Add LinkedIn URL)
+https://www.linkedin.com/in/archana-kamal-44853b2a4/
 
 ---
 
