@@ -120,23 +120,18 @@ Stripe Payment Gateway is integrated for secure online room booking payments.
 
 ### Home Page
 
-(Add Screenshot)
 
 ### Login
 
-(Add Screenshot)
 
 ### Room Listing
 
-(Add Screenshot)
 
 ### Booking
 
-(Add Screenshot)
 
 ### Admin Dashboard
 
-(Add Screenshot)
 
 ---
 
